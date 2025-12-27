@@ -113,22 +113,32 @@ public class Player1 extends Character {
 
     // Solusi Kuat: Menghitung ulang koordinat Y berdasarkan tinggi gambar aktif
     private void fixFloatingBug() {
-        // Cek apakah karakter di tanah dan tidak sedang melompat aktif
-        if (onGround() && vSpeed >= 0) {
-            vSpeed = 0;
-            Actor ground = getOneObjectAtOffset(0, getImage().getHeight() / 2 + 2, Platform.class);
-            if (ground != null) {
-                int groundTop = ground.getY() - ground.getImage().getHeight() / 2;
+        // SOLUSI RADIKAL: Cek platform dengan multiple offsets
+        // Ini memastikan karakter SELALU snap ke ground
 
-                // Kalkulasi titik tengah berdasarkan tinggi gambar yang sedang dipakai
-                int targetY = groundTop - (getImage().getHeight() / 2);
+        if (vSpeed >= 0) { // Hanya saat jatuh atau diam
+            // Cek beberapa offset untuk menangkap semua kasus
+            for (int offset = 0; offset <= 10; offset++) {
+                Actor platform = getOneObjectAtOffset(0, getImage().getHeight() / 2 + offset, Platform.class);
 
-                // Tambahkan offset khusus shield jika status isPositionLowered aktif
-                if (isShieldActive && isPositionLowered) {
-                    targetY += shieldOffset;
+                if (platform != null) {
+                    // FOUND PLATFORM! Snap immediately
+                    vSpeed = 0;
+
+                    // Hitung posisi yang TEPAT
+                    int platformTop = platform.getY() - platform.getImage().getHeight() / 2;
+                    int myHeight = getImage().getHeight();
+                    int targetY = platformTop - (myHeight / 2);
+
+                    // Adjust untuk shield
+                    if (isShieldActive && isPositionLowered) {
+                        targetY += shieldOffset;
+                    }
+
+                    // SNAP!
+                    setLocation(getX(), targetY);
+                    break; // Keluar dari loop setelah snap
                 }
-
-                setLocation(getX(), targetY);
             }
         }
     }

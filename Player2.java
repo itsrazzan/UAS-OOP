@@ -80,7 +80,7 @@ public class Player2 extends Character {
             jumpCount = 0;
 
         // 3. LOGIKA ATTACK (Gunakan isKeyDown + Lock agar Responsif)
-        if (Greenfoot.isKeyDown("o")) {
+        if (Greenfoot.isKeyDown("/")) {
             if (!attackKeyPressed) { // Tombol baru ditekan
                 cancelShield();
                 executeAttack();
@@ -90,7 +90,7 @@ public class Player2 extends Character {
             attackKeyPressed = false; // Lepas kunci saat tombol dilepas
         }
 
-        if (Greenfoot.isKeyDown("p")) {
+        if (Greenfoot.isKeyDown(".")) {
             if (!ultimateKeyPressed) {
                 cancelShield();
                 executeUltimate();
@@ -151,20 +151,41 @@ public class Player2 extends Character {
 
     // --- LOGIKA LAINNYA ---
     private void fixFloatingBug() {
-        // Cek apakah karakter di tanah dan tidak sedang melompat aktif
-        if (onGround() && vSpeed >= 0) {
-            vSpeed = 0;
-            Actor ground = getOneObjectAtOffset(0, getImage().getHeight() / 2 + 2, Platform.class);
-            if (ground != null) {
-                int groundTop = ground.getY() - ground.getImage().getHeight() / 2;
-                int targetY = groundTop - (getImage().getHeight() / 2);
+        // SOLUSI RADIKAL: Cek platform dengan multiple offsets
+        // Ini memastikan karakter SELALU snap ke ground
 
-                // Adjust untuk shield offset
-                if (isShieldActive && isPositionLowered) {
-                    targetY += shieldOffset;
+        if (vSpeed >= 0) { // Hanya saat jatuh atau diam
+            // Cek beberapa offset untuk menangkap semua kasus
+            for (int offset = 0; offset <= 10; offset++) {
+                Actor platform = getOneObjectAtOffset(0, getImage().getHeight() / 2 + offset, Platform.class);
+
+                if (platform != null) {
+                    // FOUND PLATFORM! Snap immediately
+                    vSpeed = 0;
+
+                    // DEBUG: Print info
+                    System.out.println(
+                            "P2 SNAP: offset=" + offset + ", myY=" + getY() + ", platformY=" + platform.getY());
+                    System.out.println("  myHeight=" + getImage().getHeight() + ", platformHeight="
+                            + platform.getImage().getHeight());
+
+                    // Hitung posisi yang TEPAT
+                    int platformTop = platform.getY() - platform.getImage().getHeight() / 2;
+                    int myHeight = getImage().getHeight();
+                    int targetY = platformTop - (myHeight / 2);
+
+                    System.out.println("  platformTop=" + platformTop + ", targetY=" + targetY);
+
+                    // Adjust untuk shield
+                    if (isShieldActive && isPositionLowered) {
+                        targetY += shieldOffset;
+                    }
+
+                    // SNAP!
+                    setLocation(getX(), targetY);
+                    System.out.println("  SNAPPED to Y=" + getY());
+                    break; // Keluar dari loop setelah snap
                 }
-
-                setLocation(getX(), targetY);
             }
         }
     }
