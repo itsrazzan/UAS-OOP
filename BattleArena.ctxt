@@ -1,7 +1,7 @@
 #BlueJ class context
 comment0.target=BattleArena
-comment1.params=
-comment1.target=BattleArena()
+comment1.params=diff
+comment1.target=BattleArena(int)
 comment2.params=
 comment2.target=void\ prepareLevel()
 numComments=3

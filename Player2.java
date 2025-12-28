@@ -1,7 +1,7 @@
 import greenfoot.*;
 
 public class Player2 extends Character {
-    private GreenfootImage standby, walk1, shieldImg, attack1, attack2;
+    private GreenfootImage standby, walk1, shieldImg, attack1, attack2, ult1, ult2;
     private int moveTimer = 0;
     private HealthBar myBar;
     private int shieldOffset = 10;
@@ -11,12 +11,12 @@ public class Player2 extends Character {
     private int jumpTimer = 0;
     private boolean jumpKeyPressed = false;
     private int animationFrame = 0;
+    public int maxHp; // Deklarasikan agar bisa diakses oleh Item
     private boolean attackKeyPressed = false; // Untuk mengunci input tombol O
     private boolean ultimateKeyPressed = false; // Untuk mengunci input tombol P
 
     public Player2(HealthBar bar) {
         this.myBar = bar;
-        this.hp = 100;
         this.facingRight = false; // Player 2 menghadap kiri
 
         // Load Aset Player 2
@@ -30,6 +30,11 @@ public class Player2 extends Character {
         attack1.scale(125, 180);
         attack2 = new GreenfootImage("player2-attack2.png");
         attack2.scale(150, 180);
+
+        ult1 = new GreenfootImage("player2-ult1.png");
+        ult1.scale(200, 200);
+        ult2 = new GreenfootImage("player2-ult2.png");
+        ult2.scale(220, 200);
 
         setImage(processImage(standby));
     }
@@ -94,6 +99,7 @@ public class Player2 extends Character {
             if (!ultimateKeyPressed) {
                 cancelShield();
                 executeUltimate();
+                animateUltimate();
                 ultimateKeyPressed = true;
             }
         } else {
@@ -126,7 +132,7 @@ public class Player2 extends Character {
         if (System.currentTimeMillis() - lastAttackTime > attackCooldown) {
             isAttacking = true;
             attackFrameCounter = 0; // Mulai animasi dari frame 0
-
+            
             // Deteksi target Player1
             Player1 target = (Player1) getOneIntersectingObject(Player1.class);
             if (target != null) {
@@ -165,9 +171,9 @@ public class Player2 extends Character {
 
                     // DEBUG: Print info
                     System.out.println(
-                            "P2 SNAP: offset=" + offset + ", myY=" + getY() + ", platformY=" + platform.getY());
+                        "P2 SNAP: offset=" + offset + ", myY=" + getY() + ", platformY=" + platform.getY());
                     System.out.println("  myHeight=" + getImage().getHeight() + ", platformHeight="
-                            + platform.getImage().getHeight());
+                        + platform.getImage().getHeight());
 
                     // Hitung posisi yang TEPAT
                     int platformTop = platform.getY() - platform.getImage().getHeight() / 2;
@@ -232,6 +238,24 @@ public class Player2 extends Character {
             if (target != null)
                 target.takeDamage(ultimateDamage, getX());
             lastUltimateTime = System.currentTimeMillis();
+        }
+    }
+
+    private void animateUltimate() {
+        ultimateFrameCounter++;
+        if (ultimateFrameCounter < 20) {
+            setImage(processImage(ult1)); // Gambar 1
+        } else if (ultimateFrameCounter < 40) {
+            setImage(processImage(ult2)); // Gambar 2
+            // Kirim damage tepat saat gambar kedua muncul
+            if (ultimateFrameCounter == 21) {
+                Player1 target = (Player1) getOneIntersectingObject(Player1.class);
+                if (target != null) target.takeDamage(ultimateDamage, getX());
+            }
+        } else {
+            isUltimateActive = false;
+            ultimateFrameCounter = 0;
+            setImageNormal();
         }
     }
 

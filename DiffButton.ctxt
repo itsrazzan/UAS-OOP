@@ -1,0 +1,7 @@
+#BlueJ class context
+comment0.target=DiffButton
+comment1.params=label\ diff
+comment1.target=DiffButton(java.lang.String,\ int)
+comment2.params=
+comment2.target=void\ act()
+numComments=3

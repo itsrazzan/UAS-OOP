@@ -1,7 +1,7 @@
 import greenfoot.*;
 
 public class Player1 extends Character {
-    private GreenfootImage standby, walk1, shieldImg, attack1, attack2;
+    private GreenfootImage standby, walk1, shieldImg, attack1, attack2, ult1,ult2;
     private int moveTimer = 0;
     private HealthBar myBar;
     private int shieldOffset = 10;
@@ -11,11 +11,10 @@ public class Player1 extends Character {
     private int jumpTimer = 0;
     private boolean jumpKeyPressed = false;
     private int animationFrame = 0;
+    public int maxHp; // Deklarasikan agar bisa diakses oleh Item
 
     public Player1(HealthBar bar) {
         this.myBar = bar;
-        this.hp = 100;
-
         // Inisialisasi dan scaling gambar
         standby = new GreenfootImage("player1-standby.png");
         standby.scale(120, 180);
@@ -29,6 +28,11 @@ public class Player1 extends Character {
         attack2 = new GreenfootImage("player1-attack2.png");
         attack2.scale(150, 180);
 
+        ult1 = new GreenfootImage("player1-ult1.png");
+        ult1.scale(200, 200);
+        ult2 = new GreenfootImage("player1-ult2.png");
+        ult2.scale(220, 200);
+        
         setImage(standby);
     }
 
@@ -108,6 +112,7 @@ public class Player1 extends Character {
         if ("r".equals(key) && !isAttacking) { // Only ultimate if not already attacking
             cancelShield();
             executeUltimate();
+            animateUltimate();
         }
     }
 
@@ -183,9 +188,12 @@ public class Player1 extends Character {
         if (System.currentTimeMillis() - lastAttackTime > attackCooldown) {
             isAttacking = true;
             attackFrameCounter = 0;
+            
             Player2 target = (Player2) getOneIntersectingObject(Player2.class);
-            if (target != null)
-                target.takeDamage(baseAttack, getX());
+            if (target != null){
+                // Basic Attack Terkena Buff Damage Boost
+                target.takeDamage(baseAttack + damageBoost, getX());
+            }
             lastAttackTime = System.currentTimeMillis();
         }
     }
@@ -205,11 +213,32 @@ public class Player1 extends Character {
     }
 
     private void executeUltimate() {
-        if (System.currentTimeMillis() - lastUltimateTime > 10000) {
+        // Ultimate butuh energi 100 (Hanya untuk Medium & Hard)
+        if (energy >= 100) {
             Player2 target = (Player2) getOneIntersectingObject(Player2.class);
-            if (target != null)
-                target.takeDamage(ultimateDamage, getX());
-            lastUltimateTime = System.currentTimeMillis();
+            if (target != null) {
+                target.takeDamage(ultimateDamage, getX()); // Ultimate tidak kena buff damage
+                energy = 0; // Reset energi
+            }
+        }
+    }
+
+    private void animateUltimate() {
+        ultimateFrameCounter++;
+        if (ultimateFrameCounter < 20) {
+            setImage(processImage(ult1)); // Gambar 1
+        } else if (ultimateFrameCounter < 40) {
+            setImage(processImage(ult2)); // Gambar 2
+            // Kirim damage tepat saat gambar kedua muncul
+            if (ultimateFrameCounter == 21) {
+                // Ganti Player2 dengan Player1 jika ini kode untuk Player 2
+                Player2 target = (Player2) getOneIntersectingObject(Player2.class);
+                if (target != null) target.takeDamage(ultimateDamage, getX());
+            }
+        } else {
+            isUltimateActive = false;
+            ultimateFrameCounter = 0;
+            setImageNormal();
         }
     }
 
