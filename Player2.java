@@ -4,6 +4,7 @@ public class Player2 extends Character {
     private GreenfootImage standby, walk1, shieldImg, attack1, attack2, ult1, ult2;
     private int moveTimer = 0;
     private HealthBar myBar;
+    private EnergyBar myEnergyBar;
     private int shieldOffset = 10;
     private boolean isPositionLowered = false;
     private boolean isAttacking = false;
@@ -15,8 +16,9 @@ public class Player2 extends Character {
     private boolean attackKeyPressed = false; // Untuk mengunci input tombol O
     private boolean ultimateKeyPressed = false; // Untuk mengunci input tombol P
 
-    public Player2(HealthBar bar) {
+    public Player2(HealthBar bar, EnergyBar energyBar) {
         this.myBar = bar;
+        this.myEnergyBar = energyBar;
         this.facingRight = false; // Player 2 menghadap kiri
 
         // Load Aset Player 2
@@ -96,10 +98,9 @@ public class Player2 extends Character {
         }
 
         if (Greenfoot.isKeyDown(".")) {
-            if (!ultimateKeyPressed) {
+            if (!ultimateKeyPressed && !isUltimateActive) {
                 cancelShield();
                 executeUltimate();
-                animateUltimate();
                 ultimateKeyPressed = true;
             }
         } else {
@@ -111,8 +112,10 @@ public class Player2 extends Character {
             activateShield();
         }
 
-        // HIRARKI ANIMASI: Attack harus paling atas
-        if (isAttacking) {
+        // HIRARKI ANIMASI: Ultimate > Attack > Shield > Walk/Standby
+        if (isUltimateActive) {
+            animateUltimate();
+        } else if (isAttacking) {
             animateAttack();
         } else if (isShieldActive) {
             setImageShield();
@@ -132,7 +135,7 @@ public class Player2 extends Character {
         if (System.currentTimeMillis() - lastAttackTime > attackCooldown) {
             isAttacking = true;
             attackFrameCounter = 0; // Mulai animasi dari frame 0
-            
+
             // Deteksi target Player1
             Player1 target = (Player1) getOneIntersectingObject(Player1.class);
             if (target != null) {
@@ -171,9 +174,9 @@ public class Player2 extends Character {
 
                     // DEBUG: Print info
                     System.out.println(
-                        "P2 SNAP: offset=" + offset + ", myY=" + getY() + ", platformY=" + platform.getY());
+                            "P2 SNAP: offset=" + offset + ", myY=" + getY() + ", platformY=" + platform.getY());
                     System.out.println("  myHeight=" + getImage().getHeight() + ", platformHeight="
-                        + platform.getImage().getHeight());
+                            + platform.getImage().getHeight());
 
                     // Hitung posisi yang TEPAT
                     int platformTop = platform.getY() - platform.getImage().getHeight() / 2;
@@ -232,12 +235,17 @@ public class Player2 extends Character {
             myBar.updateBar(hp);
     }
 
+    protected void updateEnergyUI() {
+        if (myEnergyBar != null)
+            myEnergyBar.updateBar(energy);
+    }
+
     private void executeUltimate() {
-        if (System.currentTimeMillis() - lastUltimateTime > 10000) {
-            Player1 target = (Player1) getOneIntersectingObject(Player1.class);
-            if (target != null)
-                target.takeDamage(ultimateDamage, getX());
-            lastUltimateTime = System.currentTimeMillis();
+        // Ultimate butuh energi 100 (berbasis waktu)
+        if (energy >= 100) {
+            isUltimateActive = true;
+            ultimateFrameCounter = 0;
+            energy = 0; // Reset energi saat aktivasi
         }
     }
 
@@ -247,10 +255,11 @@ public class Player2 extends Character {
             setImage(processImage(ult1)); // Gambar 1
         } else if (ultimateFrameCounter < 40) {
             setImage(processImage(ult2)); // Gambar 2
-            // Kirim damage tepat saat gambar kedua muncul
+            // Kirim damage tepat saat gambar kedua muncul (sekali saja)
             if (ultimateFrameCounter == 21) {
                 Player1 target = (Player1) getOneIntersectingObject(Player1.class);
-                if (target != null) target.takeDamage(ultimateDamage, getX());
+                if (target != null)
+                    target.takeDamage(ultimateDamage, getX());
             }
         } else {
             isUltimateActive = false;

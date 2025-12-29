@@ -1,9 +1,10 @@
 import greenfoot.*;
 
 public class Player1 extends Character {
-    private GreenfootImage standby, walk1, shieldImg, attack1, attack2, ult1,ult2;
+    private GreenfootImage standby, walk1, shieldImg, attack1, attack2, ult1, ult2;
     private int moveTimer = 0;
     private HealthBar myBar;
+    private EnergyBar myEnergyBar;
     private int shieldOffset = 10;
     private boolean isPositionLowered = false;
     private boolean isAttacking = false;
@@ -13,8 +14,9 @@ public class Player1 extends Character {
     private int animationFrame = 0;
     public int maxHp; // Deklarasikan agar bisa diakses oleh Item
 
-    public Player1(HealthBar bar) {
+    public Player1(HealthBar bar, EnergyBar energyBar) {
         this.myBar = bar;
+        this.myEnergyBar = energyBar;
         // Inisialisasi dan scaling gambar
         standby = new GreenfootImage("player1-standby.png");
         standby.scale(120, 180);
@@ -32,7 +34,7 @@ public class Player1 extends Character {
         ult1.scale(200, 200);
         ult2 = new GreenfootImage("player1-ult2.png");
         ult2.scale(220, 200);
-        
+
         setImage(standby);
     }
 
@@ -88,7 +90,10 @@ public class Player1 extends Character {
             activateShield();
         }
 
-        if (isAttacking) {
+        // HIRARKI ANIMASI: Ultimate > Attack > Shield > Walk/Standby
+        if (isUltimateActive) {
+            animateUltimate();
+        } else if (isAttacking) {
             animateAttack();
         } else if (isShieldActive) {
             setImageShield();
@@ -109,10 +114,9 @@ public class Player1 extends Character {
             cancelShield();
             executeAttack();
         }
-        if ("r".equals(key) && !isAttacking) { // Only ultimate if not already attacking
+        if ("r".equals(key) && !isAttacking && !isUltimateActive) {
             cancelShield();
             executeUltimate();
-            animateUltimate();
         }
     }
 
@@ -184,13 +188,18 @@ public class Player1 extends Character {
             myBar.updateBar(hp);
     }
 
+    protected void updateEnergyUI() {
+        if (myEnergyBar != null)
+            myEnergyBar.updateBar(energy);
+    }
+
     private void executeAttack() {
         if (System.currentTimeMillis() - lastAttackTime > attackCooldown) {
             isAttacking = true;
             attackFrameCounter = 0;
-            
+
             Player2 target = (Player2) getOneIntersectingObject(Player2.class);
-            if (target != null){
+            if (target != null) {
                 // Basic Attack Terkena Buff Damage Boost
                 target.takeDamage(baseAttack + damageBoost, getX());
             }
@@ -213,13 +222,11 @@ public class Player1 extends Character {
     }
 
     private void executeUltimate() {
-        // Ultimate butuh energi 100 (Hanya untuk Medium & Hard)
+        // Ultimate butuh energi 100 (berbasis waktu)
         if (energy >= 100) {
-            Player2 target = (Player2) getOneIntersectingObject(Player2.class);
-            if (target != null) {
-                target.takeDamage(ultimateDamage, getX()); // Ultimate tidak kena buff damage
-                energy = 0; // Reset energi
-            }
+            isUltimateActive = true;
+            ultimateFrameCounter = 0;
+            energy = 0; // Reset energi saat aktivasi
         }
     }
 
@@ -229,11 +236,11 @@ public class Player1 extends Character {
             setImage(processImage(ult1)); // Gambar 1
         } else if (ultimateFrameCounter < 40) {
             setImage(processImage(ult2)); // Gambar 2
-            // Kirim damage tepat saat gambar kedua muncul
+            // Kirim damage tepat saat gambar kedua muncul (sekali saja)
             if (ultimateFrameCounter == 21) {
-                // Ganti Player2 dengan Player1 jika ini kode untuk Player 2
                 Player2 target = (Player2) getOneIntersectingObject(Player2.class);
-                if (target != null) target.takeDamage(ultimateDamage, getX());
+                if (target != null)
+                    target.takeDamage(ultimateDamage, getX());
             }
         } else {
             isUltimateActive = false;

@@ -2,8 +2,8 @@ import greenfoot.*;
 
 public abstract class Character extends Actor {
     protected int hp;
-    protected int maxHp; //batasan untuk heal potion 
-    protected int baseAttack;
+    protected int maxHp; // batasan untuk heal potion
+    protected int baseAttack = 10; // Damage dasar untuk serangan biasa
     protected int ultimateDamage = 30;
     protected int vSpeed = 0;
     protected int speed = 7;
@@ -18,9 +18,9 @@ public abstract class Character extends Actor {
     protected long lastUltimateTime = 0;
     protected int attackCooldown = 500;
     protected int shieldDuration = 3000;
-    //mekanik energy dan items
+    // mekanik energy dan items
     protected double energy = 0;
-    protected double energyRechargeRate = 100.0 / (15.0 * 60.0); // 100 unit dalam 15 detik (asumsi 60 fps)
+    protected double energyRechargeRate = 100.0 / (10.0 * 60.0); // 100 unit dalam 10 detik (60 fps)
     protected int damageBoost = 0;
     protected int damageBoostTimer = 0;
     protected int speedBoostTimer = 0;
@@ -42,10 +42,11 @@ public abstract class Character extends Actor {
         vSpeed += 1; // Percepatan gravitasi
     }
 
-    protected void handleEnergyRecharge(){
-        if(energy < 100){
+    protected void handleEnergyRecharge() {
+        if (energy < 100) {
             energy += energyRechargeRate;
         }
+        updateEnergyUI(); // Update energy bar setiap frame
     }
 
     protected void handleShieldTimer() {
@@ -55,15 +56,17 @@ public abstract class Character extends Actor {
     }
 
     protected void handleItemTimers() {
-        if(damageBoostTimer > 0){
+        if (damageBoostTimer > 0) {
             damageBoostTimer--;
-            //reset bonus damage
-            if (damageBoostTimer == 0) damageBoost = 0;
+            // reset bonus damage
+            if (damageBoostTimer == 0)
+                damageBoost = 0;
         }
-        if(speedBoostTimer > 0){
+        if (speedBoostTimer > 0) {
             speedBoostTimer--;
-            //reset speed
-            if (speedBoostTimer == 0) speed = originalSpeed; 
+            // reset speed
+            if (speedBoostTimer == 0)
+                speed = originalSpeed;
         }
     }
 
@@ -97,6 +100,8 @@ public abstract class Character extends Actor {
     protected abstract void setImageShield();
 
     protected abstract void updateHealthUI();
+
+    protected abstract void updateEnergyUI();
 
     protected void checkFall() {
         if (getY() > getWorld().getHeight() - 10) {
