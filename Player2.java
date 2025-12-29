@@ -5,6 +5,7 @@ public class Player2 extends Character {
     private int moveTimer = 0;
     private HealthBar myBar;
     private EnergyBar myEnergyBar;
+    private ItemStatusBar myItemBar;
     private int shieldOffset = 10;
     private boolean isPositionLowered = false;
     private boolean isAttacking = false;
@@ -12,13 +13,15 @@ public class Player2 extends Character {
     private int jumpTimer = 0;
     private boolean jumpKeyPressed = false;
     private int animationFrame = 0;
-    public int maxHp; // Deklarasikan agar bisa diakses oleh Item
+    // maxHp dideklarasikan di Character, tidak perlu duplikat di sini
     private boolean attackKeyPressed = false; // Untuk mengunci input tombol O
     private boolean ultimateKeyPressed = false; // Untuk mengunci input tombol P
 
-    public Player2(HealthBar bar, EnergyBar energyBar) {
+    public Player2(HealthBar bar, EnergyBar energyBar, ItemStatusBar itemBar, int diff) {
         this.myBar = bar;
         this.myEnergyBar = energyBar;
+        this.myItemBar = itemBar;
+        this.difficulty = diff;
         this.facingRight = false; // Player 2 menghadap kiri
 
         // Load Aset Player 2
@@ -136,6 +139,9 @@ public class Player2 extends Character {
             isAttacking = true;
             attackFrameCounter = 0; // Mulai animasi dari frame 0
 
+            // Play attack sound
+            Greenfoot.playSound("attack1.mp3");
+
             // Deteksi target Player1
             Player1 target = (Player1) getOneIntersectingObject(Player1.class);
             if (target != null) {
@@ -240,12 +246,20 @@ public class Player2 extends Character {
             myEnergyBar.updateBar(energy);
     }
 
+    protected void updateItemStatusUI() {
+        if (myItemBar != null)
+            myItemBar.updateBar(activeItem, activeItemImage);
+    }
+
     private void executeUltimate() {
         // Ultimate butuh energi 100 (berbasis waktu)
         if (energy >= 100) {
             isUltimateActive = true;
             ultimateFrameCounter = 0;
             energy = 0; // Reset energi saat aktivasi
+
+            // Play ultimate sound
+            Greenfoot.playSound("ultimate.wav");
         }
     }
 

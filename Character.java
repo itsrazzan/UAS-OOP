@@ -1,8 +1,8 @@
 import greenfoot.*;
 
 public abstract class Character extends Actor {
-    protected int hp;
-    protected int maxHp; // batasan untuk heal potion
+    public int hp;
+    public int maxHp; // batasan untuk heal potion
     protected int baseAttack = 10; // Damage dasar untuk serangan biasa
     protected int ultimateDamage = 30;
     protected int vSpeed = 0;
@@ -11,6 +11,7 @@ public abstract class Character extends Actor {
     protected int jumpStrength = -20;
     protected int jumpCount = 0;
     protected boolean facingRight = true;
+    protected int difficulty = 1; // 1=Easy, 2=Medium, 3=Hard
 
     protected boolean isShieldActive = false;
     protected long shieldStartTime = 0;
@@ -27,6 +28,10 @@ public abstract class Character extends Actor {
     // Tambahkan di bagian variabel Character
     protected boolean isUltimateActive = false;
     protected int ultimateFrameCounter = 0;
+    protected String activeItem = ""; // Item yang sedang aktif
+    protected String activeItemImage = ""; // Path gambar item aktif
+    protected int activeItemTimer = 0; // Timer untuk menampilkan status item
+    protected int activeItemIconTimer = 0; // Timer untuk icon indicator
 
     public void act() {
         applyGravity();
@@ -43,6 +48,7 @@ public abstract class Character extends Actor {
     }
 
     protected void handleEnergyRecharge() {
+
         if (energy < 100) {
             energy += energyRechargeRate;
         }
@@ -59,15 +65,27 @@ public abstract class Character extends Actor {
         if (damageBoostTimer > 0) {
             damageBoostTimer--;
             // reset bonus damage
-            if (damageBoostTimer == 0)
+            if (damageBoostTimer == 0) {
                 damageBoost = 0;
+            }
         }
         if (speedBoostTimer > 0) {
             speedBoostTimer--;
             // reset speed
-            if (speedBoostTimer == 0)
+            if (speedBoostTimer == 0) {
                 speed = originalSpeed;
+            }
         }
+        // Timer untuk icon indicator
+        if (activeItemIconTimer > 0) {
+            activeItemIconTimer--;
+            if (activeItemIconTimer == 0) {
+                activeItem = "";
+                activeItemImage = "";
+            }
+        }
+        // Update item status bar
+        updateItemStatusUI();
     }
 
     public void takeDamage(int dmg, int attackerX) {
@@ -83,8 +101,15 @@ public abstract class Character extends Actor {
     }
 
     private void die() {
-        getWorld().showText("GAME OVER!", getWorld().getWidth() / 2, getWorld().getHeight() / 2);
-        getWorld().removeObject(this);
+        // Tentukan pemenang berdasarkan siapa yang mati
+        String winner;
+        if (this instanceof Player1) {
+            winner = "PLAYER 2";
+        } else {
+            winner = "PLAYER 1";
+        }
+        // Pindah ke layar Game Over dengan nama pemenang
+        Greenfoot.setWorld(new GameOverScreen(winner));
     }
 
     private void applyKnockback(int attackerX) {
@@ -102,6 +127,28 @@ public abstract class Character extends Actor {
     protected abstract void updateHealthUI();
 
     protected abstract void updateEnergyUI();
+
+    protected abstract void updateItemStatusUI();
+
+    // Method untuk heal dengan aman
+    public void heal(int amount) {
+        hp = Math.min(hp + amount, maxHp);
+        activeItem = "Heal Potion";
+        updateHealthUI();
+    }
+
+    // Method untuk set item aktif
+    public void setActiveItem(String itemName, String imagePath) {
+        activeItem = itemName;
+        activeItemImage = imagePath;
+    }
+
+    // Method untuk set item aktif dengan timer
+    public void setActiveItemWithTimer(String itemName, String imagePath, int timerFrames) {
+        activeItem = itemName;
+        activeItemImage = imagePath;
+        activeItemIconTimer = timerFrames;
+    }
 
     protected void checkFall() {
         if (getY() > getWorld().getHeight() - 10) {

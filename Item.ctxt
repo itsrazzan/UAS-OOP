@@ -2,6 +2,8 @@
 comment0.target=Item
 comment1.params=
 comment1.target=void\ act()
-comment2.params=p
-comment2.target=void\ applyEffect(Character)
-numComments=3
+comment2.params=
+comment2.target=void\ applyGravity()
+comment3.params=p
+comment3.target=void\ applyEffect(Character)
+numComments=4

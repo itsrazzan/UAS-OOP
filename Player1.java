@@ -5,6 +5,7 @@ public class Player1 extends Character {
     private int moveTimer = 0;
     private HealthBar myBar;
     private EnergyBar myEnergyBar;
+    private ItemStatusBar myItemBar;
     private int shieldOffset = 10;
     private boolean isPositionLowered = false;
     private boolean isAttacking = false;
@@ -12,11 +13,13 @@ public class Player1 extends Character {
     private int jumpTimer = 0;
     private boolean jumpKeyPressed = false;
     private int animationFrame = 0;
-    public int maxHp; // Deklarasikan agar bisa diakses oleh Item
+    // maxHp dideklarasikan di Character, tidak perlu duplikat di sini
 
-    public Player1(HealthBar bar, EnergyBar energyBar) {
+    public Player1(HealthBar bar, EnergyBar energyBar, ItemStatusBar itemBar, int diff) {
         this.myBar = bar;
         this.myEnergyBar = energyBar;
+        this.myItemBar = itemBar;
+        this.difficulty = diff;
         // Inisialisasi dan scaling gambar
         standby = new GreenfootImage("player1-standby.png");
         standby.scale(120, 180);
@@ -193,10 +196,18 @@ public class Player1 extends Character {
             myEnergyBar.updateBar(energy);
     }
 
+    protected void updateItemStatusUI() {
+        if (myItemBar != null)
+            myItemBar.updateBar(activeItem, activeItemImage);
+    }
+
     private void executeAttack() {
         if (System.currentTimeMillis() - lastAttackTime > attackCooldown) {
             isAttacking = true;
             attackFrameCounter = 0;
+
+            // Play attack sound
+            Greenfoot.playSound("attack2.mp3");
 
             Player2 target = (Player2) getOneIntersectingObject(Player2.class);
             if (target != null) {
@@ -227,6 +238,9 @@ public class Player1 extends Character {
             isUltimateActive = true;
             ultimateFrameCounter = 0;
             energy = 0; // Reset energi saat aktivasi
+
+            // Play ultimate sound
+            Greenfoot.playSound("ultimate.wav");
         }
     }
 

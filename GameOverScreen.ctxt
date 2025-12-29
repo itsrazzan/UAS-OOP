@@ -1,0 +1,12 @@
+#BlueJ class context
+comment0.target=GameOverScreen
+comment0.text=\n\ Modern\ Game\ Over\ Screen\ dengan\ tampilan\ pemenang\n
+comment1.params=winnerName
+comment1.target=GameOverScreen(java.lang.String)
+comment2.params=
+comment2.target=void\ act()
+comment3.params=
+comment3.target=void\ act()
+comment4.params=
+comment4.target=void\ updateDisplay()
+numComments=5

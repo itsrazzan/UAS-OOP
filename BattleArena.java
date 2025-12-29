@@ -4,21 +4,35 @@ public class BattleArena extends World {
     public static final int WIDTH = 1600;
     public static final int HEIGHT = 900;
     private int difficulty;
+    public static GreenfootSound gameMusic; // Static untuk bisa diakses dari luar
 
     public BattleArena(int diff) {
         super(WIDTH, HEIGHT, 1);
-        // prepareBackground();
-        // setPaintOrder(Player.class, Item.class, Platform.class);
-        // fungsi untuk scaling gambar
-        // 2.Load gambar secara eksplisit dari folder images
-        GreenfootImage background = new GreenfootImage("background.gif");
-        // 3. Tarik (scale) gambar agar pas dengan resolusi World
-        background.scale(WIDTH, HEIGHT);
 
-        // 4. Pasang sebagai background utama
+        // Stop menu music dan mainkan game music
+        MainMenu.stopMenuMusic();
+        playGameMusic();
+
+        // fungsi untuk scaling gambar
+        GreenfootImage background = new GreenfootImage("background.gif");
+        background.scale(WIDTH, HEIGHT);
         setBackground(background);
         this.difficulty = diff;
         prepareLevel();
+    }
+
+    private void playGameMusic() {
+        if (gameMusic == null) {
+            gameMusic = new GreenfootSound("game_music.mp3");
+            gameMusic.setVolume(100); // Set volume 50% (0-100)
+        }
+        gameMusic.playLoop();
+    }
+
+    public static void stopGameMusic() {
+        if (gameMusic != null) {
+            gameMusic.stop();
+        }
     }
 
     private void prepareLevel() {
@@ -51,19 +65,33 @@ public class BattleArena extends World {
         addObject(hb1, 250, 60); // Sisi kiri atas
         addObject(hb2, 1350, 60); // Sisi kanan atas
 
-        // EnergyBar untuk Ultimate (di bawah HealthBar)
-        EnergyBar eb1 = new EnergyBar(1);
-        EnergyBar eb2 = new EnergyBar(2);
-        addObject(eb1, 250, 90); // Di bawah HP bar player 1
-        addObject(eb2, 1350, 90); // Di bawah HP bar player 2
+        // EnergyBar untuk Ultimate (hanya di level Medium dan Hard)
+        EnergyBar eb1 = null;
+        EnergyBar eb2 = null;
+        if (difficulty >= 2) {
+            eb1 = new EnergyBar(1);
+            eb2 = new EnergyBar(2);
+            addObject(eb1, 250, 90); // Di bawah HP bar player 1
+            addObject(eb2, 1350, 90); // Di bawah HP bar player 2
+        }
+
+        // ItemStatusBar untuk Hard mode (di bawah energy bar)
+        ItemStatusBar ib1 = null;
+        ItemStatusBar ib2 = null;
+        if (difficulty == 3) {
+            ib1 = new ItemStatusBar(1);
+            ib2 = new ItemStatusBar(2);
+            addObject(ib1, 250, 115); // Di bawah energy bar player 1
+            addObject(ib2, 1350, 115); // Di bawah energy bar player 2
+        }
 
         // tambahkan hp player sesaui kesulitan
-        Player1 p1 = new Player1(hb1, eb1);
+        Player1 p1 = new Player1(hb1, eb1, ib1, difficulty);
         p1.hp = startHP;
         p1.maxHp = startHP;
 
         // Lakukan hal yang sama untuk Player 2
-        Player2 p2 = new Player2(hb2, eb2);
+        Player2 p2 = new Player2(hb2, eb2, ib2, difficulty);
         p2.hp = startHP;
         p2.maxHp = startHP;
 

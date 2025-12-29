@@ -1,0 +1,7 @@
+#BlueJ class context
+comment0.target=EnergyBar
+comment1.params=playerNum
+comment1.target=EnergyBar(int)
+comment2.params=energy
+comment2.target=void\ updateBar(double)
+numComments=3
