@@ -1,9 +1,11 @@
 import greenfoot.*;
 
 public class Player2 extends Character {
-    private GreenfootImage standby, walk1, shieldImg, attack1, attack2;
+    private GreenfootImage standby, walk1, shieldImg, attack1, attack2, ult1, ult2;
     private int moveTimer = 0;
     private HealthBar myBar;
+    private EnergyBar myEnergyBar;
+    private ItemStatusBar myItemBar;
     private int shieldOffset = 10;
     private boolean isPositionLowered = false;
     private boolean isAttacking = false;
@@ -11,12 +13,15 @@ public class Player2 extends Character {
     private int jumpTimer = 0;
     private boolean jumpKeyPressed = false;
     private int animationFrame = 0;
+    // maxHp dideklarasikan di Character, tidak perlu duplikat di sini
     private boolean attackKeyPressed = false; // Untuk mengunci input tombol O
     private boolean ultimateKeyPressed = false; // Untuk mengunci input tombol P
 
-    public Player2(HealthBar bar) {
+    public Player2(HealthBar bar, EnergyBar energyBar, ItemStatusBar itemBar, int diff) {
         this.myBar = bar;
-        this.hp = 100;
+        this.myEnergyBar = energyBar;
+        this.myItemBar = itemBar;
+        this.difficulty = diff;
         this.facingRight = false; // Player 2 menghadap kiri
 
         // Load Aset Player 2
@@ -30,6 +35,11 @@ public class Player2 extends Character {
         attack1.scale(125, 180);
         attack2 = new GreenfootImage("player2-attack2.png");
         attack2.scale(150, 180);
+
+        ult1 = new GreenfootImage("player2-ult1.png");
+        ult1.scale(200, 200);
+        ult2 = new GreenfootImage("player2-ult2.png");
+        ult2.scale(220, 200);
 
         setImage(processImage(standby));
     }
@@ -80,7 +90,7 @@ public class Player2 extends Character {
             jumpCount = 0;
 
         // 3. LOGIKA ATTACK (Gunakan isKeyDown + Lock agar Responsif)
-        if (Greenfoot.isKeyDown("o")) {
+        if (Greenfoot.isKeyDown("/")) {
             if (!attackKeyPressed) { // Tombol baru ditekan
                 cancelShield();
                 executeAttack();
@@ -90,8 +100,8 @@ public class Player2 extends Character {
             attackKeyPressed = false; // Lepas kunci saat tombol dilepas
         }
 
-        if (Greenfoot.isKeyDown("p")) {
-            if (!ultimateKeyPressed) {
+        if (Greenfoot.isKeyDown(".")) {
+            if (!ultimateKeyPressed && !isUltimateActive) {
                 cancelShield();
                 executeUltimate();
                 ultimateKeyPressed = true;
@@ -105,8 +115,10 @@ public class Player2 extends Character {
             activateShield();
         }
 
-        // HIRARKI ANIMASI: Attack harus paling atas
-        if (isAttacking) {
+        // HIRARKI ANIMASI: Ultimate > Attack > Shield > Walk/Standby
+        if (isUltimateActive) {
+            animateUltimate();
+        } else if (isAttacking) {
             animateAttack();
         } else if (isShieldActive) {
             setImageShield();
@@ -126,6 +138,9 @@ public class Player2 extends Character {
         if (System.currentTimeMillis() - lastAttackTime > attackCooldown) {
             isAttacking = true;
             attackFrameCounter = 0; // Mulai animasi dari frame 0
+
+            // Play attack sound
+            Greenfoot.playSound("attack1.mp3");
 
             // Deteksi target Player1
             Player1 target = (Player1) getOneIntersectingObject(Player1.class);
@@ -151,20 +166,41 @@ public class Player2 extends Character {
 
     // --- LOGIKA LAINNYA ---
     private void fixFloatingBug() {
-        // Cek apakah karakter di tanah dan tidak sedang melompat aktif
-        if (onGround() && vSpeed >= 0) {
-            vSpeed = 0;
-            Actor ground = getOneObjectAtOffset(0, getImage().getHeight() / 2 + 2, Platform.class);
-            if (ground != null) {
-                int groundTop = ground.getY() - ground.getImage().getHeight() / 2;
-                int targetY = groundTop - (getImage().getHeight() / 2);
+        // SOLUSI RADIKAL: Cek platform dengan multiple offsets
+        // Ini memastikan karakter SELALU snap ke ground
 
-                // Adjust untuk shield offset
-                if (isShieldActive && isPositionLowered) {
-                    targetY += shieldOffset;
+        if (vSpeed >= 0) { // Hanya saat jatuh atau diam
+            // Cek beberapa offset untuk menangkap semua kasus
+            for (int offset = 0; offset <= 10; offset++) {
+                Actor platform = getOneObjectAtOffset(0, getImage().getHeight() / 2 + offset, Platform.class);
+
+                if (platform != null) {
+                    // FOUND PLATFORM! Snap immediately
+                    vSpeed = 0;
+
+                    // DEBUG: Print info
+                    System.out.println(
+                            "P2 SNAP: offset=" + offset + ", myY=" + getY() + ", platformY=" + platform.getY());
+                    System.out.println("  myHeight=" + getImage().getHeight() + ", platformHeight="
+                            + platform.getImage().getHeight());
+
+                    // Hitung posisi yang TEPAT
+                    int platformTop = platform.getY() - platform.getImage().getHeight() / 2;
+                    int myHeight = getImage().getHeight();
+                    int targetY = platformTop - (myHeight / 2);
+
+                    System.out.println("  platformTop=" + platformTop + ", targetY=" + targetY);
+
+                    // Adjust untuk shield
+                    if (isShieldActive && isPositionLowered) {
+                        targetY += shieldOffset;
+                    }
+
+                    // SNAP!
+                    setLocation(getX(), targetY);
+                    System.out.println("  SNAPPED to Y=" + getY());
+                    break; // Keluar dari loop setelah snap
                 }
-
-                setLocation(getX(), targetY);
             }
         }
     }
@@ -205,12 +241,44 @@ public class Player2 extends Character {
             myBar.updateBar(hp);
     }
 
+    protected void updateEnergyUI() {
+        if (myEnergyBar != null)
+            myEnergyBar.updateBar(energy);
+    }
+
+    protected void updateItemStatusUI() {
+        if (myItemBar != null)
+            myItemBar.updateBar(activeItem, activeItemImage);
+    }
+
     private void executeUltimate() {
-        if (System.currentTimeMillis() - lastUltimateTime > 10000) {
-            Player1 target = (Player1) getOneIntersectingObject(Player1.class);
-            if (target != null)
-                target.takeDamage(ultimateDamage, getX());
-            lastUltimateTime = System.currentTimeMillis();
+        // Ultimate butuh energi 100 (berbasis waktu)
+        if (energy >= 100) {
+            isUltimateActive = true;
+            ultimateFrameCounter = 0;
+            energy = 0; // Reset energi saat aktivasi
+
+            // Play ultimate sound
+            Greenfoot.playSound("ultimate.wav");
+        }
+    }
+
+    private void animateUltimate() {
+        ultimateFrameCounter++;
+        if (ultimateFrameCounter < 20) {
+            setImage(processImage(ult1)); // Gambar 1
+        } else if (ultimateFrameCounter < 40) {
+            setImage(processImage(ult2)); // Gambar 2
+            // Kirim damage tepat saat gambar kedua muncul (sekali saja)
+            if (ultimateFrameCounter == 21) {
+                Player1 target = (Player1) getOneIntersectingObject(Player1.class);
+                if (target != null)
+                    target.takeDamage(ultimateDamage, getX());
+            }
+        } else {
+            isUltimateActive = false;
+            ultimateFrameCounter = 0;
+            setImageNormal();
         }
     }
 

@@ -1,0 +1,7 @@
+#BlueJ class context
+comment0.target=DamageBoost
+comment1.params=
+comment1.target=DamageBoost()
+comment2.params=p
+comment2.target=void\ applyEffect(Character)
+numComments=3

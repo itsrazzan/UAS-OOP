@@ -1,0 +1,9 @@
+#BlueJ class context
+comment0.target=ItemStatusBar
+comment1.params=playerNum
+comment1.target=ItemStatusBar(int)
+comment2.params=itemName\ imagePath
+comment2.target=void\ updateBar(java.lang.String,\ java.lang.String)
+comment3.params=
+comment3.target=void\ setEmptyImage()
+numComments=4

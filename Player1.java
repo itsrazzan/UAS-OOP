@@ -1,9 +1,11 @@
 import greenfoot.*;
 
 public class Player1 extends Character {
-    private GreenfootImage standby, walk1, shieldImg, attack1, attack2;
+    private GreenfootImage standby, walk1, shieldImg, attack1, attack2, ult1, ult2;
     private int moveTimer = 0;
     private HealthBar myBar;
+    private EnergyBar myEnergyBar;
+    private ItemStatusBar myItemBar;
     private int shieldOffset = 10;
     private boolean isPositionLowered = false;
     private boolean isAttacking = false;
@@ -11,11 +13,13 @@ public class Player1 extends Character {
     private int jumpTimer = 0;
     private boolean jumpKeyPressed = false;
     private int animationFrame = 0;
+    // maxHp dideklarasikan di Character, tidak perlu duplikat di sini
 
-    public Player1(HealthBar bar) {
+    public Player1(HealthBar bar, EnergyBar energyBar, ItemStatusBar itemBar, int diff) {
         this.myBar = bar;
-        this.hp = 100;
-
+        this.myEnergyBar = energyBar;
+        this.myItemBar = itemBar;
+        this.difficulty = diff;
         // Inisialisasi dan scaling gambar
         standby = new GreenfootImage("player1-standby.png");
         standby.scale(120, 180);
@@ -28,6 +32,11 @@ public class Player1 extends Character {
         attack1.scale(125, 180); // Disamakan tingginya 180 agar lebih stabil
         attack2 = new GreenfootImage("player1-attack2.png");
         attack2.scale(150, 180);
+
+        ult1 = new GreenfootImage("player1-ult1.png");
+        ult1.scale(200, 200);
+        ult2 = new GreenfootImage("player1-ult2.png");
+        ult2.scale(220, 200);
 
         setImage(standby);
     }
@@ -84,7 +93,10 @@ public class Player1 extends Character {
             activateShield();
         }
 
-        if (isAttacking) {
+        // HIRARKI ANIMASI: Ultimate > Attack > Shield > Walk/Standby
+        if (isUltimateActive) {
+            animateUltimate();
+        } else if (isAttacking) {
             animateAttack();
         } else if (isShieldActive) {
             setImageShield();
@@ -105,7 +117,7 @@ public class Player1 extends Character {
             cancelShield();
             executeAttack();
         }
-        if ("r".equals(key) && !isAttacking) { // Only ultimate if not already attacking
+        if ("r".equals(key) && !isAttacking && !isUltimateActive) {
             cancelShield();
             executeUltimate();
         }
@@ -113,22 +125,32 @@ public class Player1 extends Character {
 
     // Solusi Kuat: Menghitung ulang koordinat Y berdasarkan tinggi gambar aktif
     private void fixFloatingBug() {
-        // Cek apakah karakter di tanah dan tidak sedang melompat aktif
-        if (onGround() && vSpeed >= 0) {
-            vSpeed = 0;
-            Actor ground = getOneObjectAtOffset(0, getImage().getHeight() / 2 + 2, Platform.class);
-            if (ground != null) {
-                int groundTop = ground.getY() - ground.getImage().getHeight() / 2;
+        // SOLUSI RADIKAL: Cek platform dengan multiple offsets
+        // Ini memastikan karakter SELALU snap ke ground
 
-                // Kalkulasi titik tengah berdasarkan tinggi gambar yang sedang dipakai
-                int targetY = groundTop - (getImage().getHeight() / 2);
+        if (vSpeed >= 0) { // Hanya saat jatuh atau diam
+            // Cek beberapa offset untuk menangkap semua kasus
+            for (int offset = 0; offset <= 10; offset++) {
+                Actor platform = getOneObjectAtOffset(0, getImage().getHeight() / 2 + offset, Platform.class);
 
-                // Tambahkan offset khusus shield jika status isPositionLowered aktif
-                if (isShieldActive && isPositionLowered) {
-                    targetY += shieldOffset;
+                if (platform != null) {
+                    // FOUND PLATFORM! Snap immediately
+                    vSpeed = 0;
+
+                    // Hitung posisi yang TEPAT
+                    int platformTop = platform.getY() - platform.getImage().getHeight() / 2;
+                    int myHeight = getImage().getHeight();
+                    int targetY = platformTop - (myHeight / 2);
+
+                    // Adjust untuk shield
+                    if (isShieldActive && isPositionLowered) {
+                        targetY += shieldOffset;
+                    }
+
+                    // SNAP!
+                    setLocation(getX(), targetY);
+                    break; // Keluar dari loop setelah snap
                 }
-
-                setLocation(getX(), targetY);
             }
         }
     }
@@ -169,13 +191,29 @@ public class Player1 extends Character {
             myBar.updateBar(hp);
     }
 
+    protected void updateEnergyUI() {
+        if (myEnergyBar != null)
+            myEnergyBar.updateBar(energy);
+    }
+
+    protected void updateItemStatusUI() {
+        if (myItemBar != null)
+            myItemBar.updateBar(activeItem, activeItemImage);
+    }
+
     private void executeAttack() {
         if (System.currentTimeMillis() - lastAttackTime > attackCooldown) {
             isAttacking = true;
             attackFrameCounter = 0;
+
+            // Play attack sound
+            Greenfoot.playSound("attack2.mp3");
+
             Player2 target = (Player2) getOneIntersectingObject(Player2.class);
-            if (target != null)
-                target.takeDamage(baseAttack, getX());
+            if (target != null) {
+                // Basic Attack Terkena Buff Damage Boost
+                target.takeDamage(baseAttack + damageBoost, getX());
+            }
             lastAttackTime = System.currentTimeMillis();
         }
     }
@@ -195,11 +233,33 @@ public class Player1 extends Character {
     }
 
     private void executeUltimate() {
-        if (System.currentTimeMillis() - lastUltimateTime > 10000) {
-            Player2 target = (Player2) getOneIntersectingObject(Player2.class);
-            if (target != null)
-                target.takeDamage(ultimateDamage, getX());
-            lastUltimateTime = System.currentTimeMillis();
+        // Ultimate butuh energi 100 (berbasis waktu)
+        if (energy >= 100) {
+            isUltimateActive = true;
+            ultimateFrameCounter = 0;
+            energy = 0; // Reset energi saat aktivasi
+
+            // Play ultimate sound
+            Greenfoot.playSound("ultimate.wav");
+        }
+    }
+
+    private void animateUltimate() {
+        ultimateFrameCounter++;
+        if (ultimateFrameCounter < 20) {
+            setImage(processImage(ult1)); // Gambar 1
+        } else if (ultimateFrameCounter < 40) {
+            setImage(processImage(ult2)); // Gambar 2
+            // Kirim damage tepat saat gambar kedua muncul (sekali saja)
+            if (ultimateFrameCounter == 21) {
+                Player2 target = (Player2) getOneIntersectingObject(Player2.class);
+                if (target != null)
+                    target.takeDamage(ultimateDamage, getX());
+            }
+        } else {
+            isUltimateActive = false;
+            ultimateFrameCounter = 0;
+            setImageNormal();
         }
     }
 

@@ -1,7 +1,7 @@
 #BlueJ class context
 comment0.target=HealthBar
-comment1.params=playerNum
-comment1.target=HealthBar(int)
+comment1.params=playerNum\ maxHp
+comment1.target=HealthBar(int,\ int)
 comment2.params=hp
 comment2.target=void\ updateBar(int)
 numComments=3
