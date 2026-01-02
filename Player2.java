@@ -166,7 +166,7 @@ public class Player2 extends Character {
 
     // --- LOGIKA LAINNYA ---
     private void fixFloatingBug() {
-        // SOLUSI RADIKAL: Cek platform dengan multiple offsets
+        // Cek platform dengan multiple offsets
         // Ini memastikan karakter SELALU snap ke ground
 
         if (vSpeed >= 0) { // Hanya saat jatuh atau diam
@@ -178,18 +178,10 @@ public class Player2 extends Character {
                     // FOUND PLATFORM! Snap immediately
                     vSpeed = 0;
 
-                    // DEBUG: Print info
-                    System.out.println(
-                            "P2 SNAP: offset=" + offset + ", myY=" + getY() + ", platformY=" + platform.getY());
-                    System.out.println("  myHeight=" + getImage().getHeight() + ", platformHeight="
-                            + platform.getImage().getHeight());
-
                     // Hitung posisi yang TEPAT
                     int platformTop = platform.getY() - platform.getImage().getHeight() / 2;
                     int myHeight = getImage().getHeight();
                     int targetY = platformTop - (myHeight / 2);
-
-                    System.out.println("  platformTop=" + platformTop + ", targetY=" + targetY);
 
                     // Adjust untuk shield
                     if (isShieldActive && isPositionLowered) {
@@ -198,7 +190,6 @@ public class Player2 extends Character {
 
                     // SNAP!
                     setLocation(getX(), targetY);
-                    System.out.println("  SNAPPED to Y=" + getY());
                     break; // Keluar dari loop setelah snap
                 }
             }

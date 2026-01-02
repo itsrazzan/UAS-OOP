@@ -9,10 +9,10 @@ public class NavButton extends MenuButton {
         super.act();
         if (Greenfoot.mousePressed(this)) {
             if (label.equals("Tutorial")) {
-                // Kamu harus buat world TutorialWorld nanti
-                // Greenfoot.setWorld(new TutorialWorld()); 
-                System.out.println("Buka Tutorial");
+                // Navigate to TutorialWorld (music continues playing)
+                Greenfoot.setWorld(new TutorialWorld());
             } else if (label.equals("About")) {
+                // About functionality - music continues playing
                 System.out.println("Buka About");
             }
         }

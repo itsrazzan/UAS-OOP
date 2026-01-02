@@ -20,10 +20,11 @@ public class MainMenu extends World {
 
     // Method ini dipanggil ketika tombol Run ditekan
     public void started() {
-        if (!musicStarted) {
+        // Only start music if not already playing (prevents restart when returning from game)
+        if (menuMusic == null || !menuMusic.isPlaying()) {
             playMenuMusic();
-            musicStarted = true;
         }
+        musicStarted = true;
     }
 
     // Method ini dipanggil ketika game di-pause
@@ -38,7 +39,10 @@ public class MainMenu extends World {
             menuMusic = new GreenfootSound("menu_music.mp3");
             menuMusic.setVolume(100); // Set volume 50% (0-100)
         }
-        menuMusic.playLoop();
+        // Only start if not already playing
+        if (!menuMusic.isPlaying()) {
+            menuMusic.playLoop();
+        }
     }
 
     public static void stopMenuMusic() {
