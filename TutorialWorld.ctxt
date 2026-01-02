@@ -1,0 +1,12 @@
+#BlueJ class context
+comment0.target=TutorialWorld
+comment0.text=\n\ Tutorial\ Screen\ -\ Modern\ minimalist\ design\ showing\ game\ mechanics\n
+comment1.params=
+comment1.target=TutorialWorld()
+comment2.params=
+comment2.target=void\ act()
+comment3.params=
+comment3.target=void\ act()
+comment4.params=
+comment4.target=void\ drawTutorialContent()
+numComments=5
